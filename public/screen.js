@@ -206,13 +206,17 @@ let phase = 0, glassPress = 0, pressX = 0.5, pressY = 0.46, driftRamp = 0;
 const WORLD_SIZE = 1.1;
 // Hold the boot veil until BOTH the phone and balloon are loaded, then start the intro and fade in
 // gracefully — no pop-in, no origin→phone cut. (Phone-load failure still reveals so the emerge runs.)
-let balReady = false, phoneReady = false, revealed = false;
+let balReady = false, phoneReady = false, revealed = false, handoff = false;
 function tryReveal() {
-  if (revealed || !balReady || !phoneReady) return;
+  if (revealed || !balReady || !phoneReady || !handoff) return;   // wait for BOTH assets AND the intro hand-off
   revealed = true;
   if (state === "loading") startIntro();
   document.getElementById("boot")?.classList.add("ready");
 }
+// the scroll-reveal intro (Act 0) calls this — via the host page — to flow into the live experience.
+// Standalone (no intro on the page) auto-hands-off so the break-glass still runs on its own.
+window.startBreakGlass = () => { handoff = true; tryReveal(); };
+if (window.__doHandoff || !window.frameElement && !document.getElementById("intro-frame")) window.startBreakGlass();
 loadBalloon("/models/x.obj", WORLD_SIZE).then((b) => {
   bal = b; b.mesh.material.emissive = new THREE.Color(0x5a2fd6); b.mesh.material.emissiveIntensity = 0.28;
   b.mesh.material.transparent = true;                 // crossfade in as it emerges from the screen icon
