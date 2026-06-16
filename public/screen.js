@@ -163,9 +163,9 @@ function drawPlacard() {
   pg.fillStyle = "#15030b"; pg.fillText(lbl, W2 / 2, ry + rh / 2 + 1);
   // BREAK THE GLASS
   pg.textBaseline = "alphabetic"; pg.fillStyle = "#fff"; pg.shadowColor = "rgba(185,150,255,0.6)"; pg.shadowBlur = 28;
-  pg.font = "900 90px Archivo, system-ui, sans-serif"; pg.fillText("BREAK", W2 / 2, 218); pg.fillText("THE GLASS", W2 / 2, 304); pg.shadowBlur = 0;
+  pg.font = "900 90px Archivo, system-ui, sans-serif"; pg.fillText("SCAN TO", W2 / 2, 218); pg.fillText("BREAK GLASS", W2 / 2, 304); pg.shadowBlur = 0;
   // sub-line
-  pg.fillStyle = "#d9b6ff"; pg.font = "700 18px 'JetBrains Mono', monospace"; pg.fillText("SCAN · THROW TO SMASH · SET THE X FREE", W2 / 2, 352);
+  pg.fillStyle = "#d9b6ff"; pg.font = "700 18px 'JetBrains Mono', monospace"; pg.fillText("THROW TO SMASH · SET THE X FREE", W2 / 2, 352);
   // QR + strike-zone corner brackets
   const qs = 300, qx = (W2 - qs) / 2, qy = 404;
   pg.fillStyle = "#efe7d3"; pg.fillRect(qx, qy, qs, qs);

@@ -8,16 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Expanded:wght@700;800;900&display=swap" rel="stylesheet">
-<!-- quietly cache the break-glass bytes during the scroll (PREFETCH = no execution, no parse → zero scroll jank);
-     the 3D only loads+runs at the hand-off, so the scrub stays as smooth as the standalone. -->
-<link rel="prefetch" href="/screen.js">
-<link rel="prefetch" href="/balloon.js">
-<link rel="prefetch" href="/vendor/three.module.js">
-<link rel="prefetch" href="/vendor/addons/loaders/GLTFLoader.js">
-<link rel="prefetch" href="/vendor/addons/loaders/DRACOLoader.js">
-<link rel="prefetch" href="/vendor/draco/draco_decoder.wasm">
-<link rel="prefetch" href="/models/iphone-opt.glb">
-<link rel="prefetch" href="/models/x.obj">
 <style>
   :root{
     --ink-base:#0A0A0C; --seat:#16161B; --panel:#1F1F1F;
@@ -418,8 +408,8 @@
   <div class="status" id="statusLine">WAITING FOR PHONE…</div>
   <div class="panel" id="panel">
     <div class="ribbon"><span>⚠ IN CASE OF EMERGENCY ⚠</span></div>
-    <h1>BREAK<br>THE GLASS</h1>
-    <div class="sub">scan · throw to smash · set the X free</div>
+    <h1>SCAN TO<br>BREAK GLASS</h1>
+    <div class="sub">throw to smash · set the X free</div>
     <div class="qr" id="qr"></div>
     <div class="code" id="code">— — — —</div>
   </div>
@@ -522,12 +512,10 @@
   // ---- HAND-OFF: cross-fade THIS reveal into the live break-glass underneath (same page, no navigation) ----
   let wentLive = false;
   function goLive(){ if(wentLive) return; wentLive = true;
-    // The 3D was kept OUT of the page during the scroll (only prefetched). Load + run it NOW, after scrolling.
-    // The reveal's phone holds while it inits; when the live phone is ready, screen.js calls __onLive → cross-fade.
+    // screen.js is already loaded at page start (its 3D inits during the loader, and only RENDERS after this),
+    // so the live phone is ready → reveal is instant and the X is tappable immediately (no "wait" bug).
     window.__onLive = () => { const layer = document.getElementById('scroller'); if(layer) layer.classList.add('gone'); };
-    window.__doHandoff = true;
-    if(window.startBreakGlass) window.startBreakGlass();
-    else { const s = document.createElement('script'); s.type = 'module'; s.src = '/screen.js'; document.body.appendChild(s); }
+    window.startBreakGlass();
   }
   const imgs = new Array(FRAMES+1);            // SPARSE — only a window around the cursor is ever held decoded
   const live = new Set();                      // frame indices currently alive
@@ -792,5 +780,6 @@
 <script type="importmap">
   { "imports": { "three": "/vendor/three.module.js", "three/addons/": "/vendor/addons/" } }
 </script>
+<script type="module" src="/screen.js"></script>
 </body>
 </html>
