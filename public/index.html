@@ -48,9 +48,19 @@
       .code { font:700 13px/1 "JetBrains Mono",monospace; letter-spacing:.5em; color:#ff8a5a; }
       body.live .panel, body.live .chrome { opacity:0; pointer-events:none; }
       body.intro .panel { opacity:0; pointer-events:none; }   /* hide the placard during the Act-1 intro */
+
+      /* boot veil — covers the whole load so nothing pops/cuts; lifts once phone+balloon are ready,
+         fading in gracefully onto the phone. Branded so the wait never looks frozen. */
+      #boot { position:fixed; inset:0; z-index:50; pointer-events:none; display:flex; align-items:center; justify-content:center;
+        background:radial-gradient(120% 95% at 50% 62%, #1c1148 0%, #0c0826 48%, #05030f 100%); opacity:1; transition:opacity .9s ease; }
+      #boot .bootmark { font-weight:900; letter-spacing:.06em; font-size:22px; color:var(--cream); animation:bootPulse 1.6s ease-in-out infinite; }
+      #boot .bootmark b { color:var(--accent); }
+      #boot.ready { opacity:0; } #boot.ready .bootmark { animation:none; }
+      @keyframes bootPulse { 0%,100%{opacity:.22} 50%{opacity:.9} }
     </style>
   </head>
   <body>
+    <div id="boot"><div class="bootmark">XLAB <b>REALITY</b></div></div>
     <header class="chrome"><div class="brand">XLAB <b>REALITY</b></div><div class="tag">CAGED</div></header>
 
     <div id="dream">

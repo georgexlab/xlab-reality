@@ -38,7 +38,7 @@ let bgTex;  // dark case backdrop — nulled during Act 1 (so the title column s
   grd.addColorStop(0, "#241252"); grd.addColorStop(0.55, "#110a2e"); grd.addColorStop(1, "#05030f"); bx.fillStyle = grd; bx.fillRect(0, 0, 512, 512);
   bgTex = new THREE.CanvasTexture(bc); bgTex.colorSpace = THREE.SRGBColorSpace; scene.background = bgTex;
 }
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100); camera.position.set(0, 0, 3.9); camera.lookAt(0, 0, 0);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100); camera.position.set(0, -9.5, 3.9); camera.lookAt(0, -9.5, 0);   // open ALREADY framed on the phone (PHONE_Y/CAM_Z) → no origin→phone cut before startIntro
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.add(new THREE.AmbientLight(0x8a7bff, 0.42));                                  // cool violet ambient (raised → even base, box reads enclosed)
@@ -204,6 +204,15 @@ const R = 0.6, BZ = HZ - R; let BX = HX - R, BY = HY - R, caseFx = 1, caseFy = 1
 const sq = new THREE.Vector3(0, 0, 0);                  // squash scale offsets
 let phase = 0, glassPress = 0, pressX = 0.5, pressY = 0.46, driftRamp = 0;
 const WORLD_SIZE = 1.1;
+// Hold the boot veil until BOTH the phone and balloon are loaded, then start the intro and fade in
+// gracefully — no pop-in, no origin→phone cut. (Phone-load failure still reveals so the emerge runs.)
+let balReady = false, phoneReady = false, revealed = false;
+function tryReveal() {
+  if (revealed || !balReady || !phoneReady) return;
+  revealed = true;
+  if (state === "loading") startIntro();
+  document.getElementById("boot")?.classList.add("ready");
+}
 loadBalloon("/models/x.obj", WORLD_SIZE).then((b) => {
   bal = b; b.mesh.material.emissive = new THREE.Color(0x5a2fd6); b.mesh.material.emissiveIntensity = 0.28;
   b.mesh.material.transparent = true;                 // crossfade in as it emerges from the screen icon
@@ -216,8 +225,8 @@ loadBalloon("/models/x.obj", WORLD_SIZE).then((b) => {
   // balloon scale = WORLD_SIZE * rig.scale, so derive icon/out rig-scales from the desired world diameters
   UNI0 = (ICON_FRAC * P_SCREEN_W * 0.78) / WORLD_SIZE;   // icon-sized
   OUT_UNI = (0.72 * P_SCREEN_W) / WORLD_SIZE;            // floated-out size
-  startIntro();
-}).catch(() => { statusLine.textContent = "BALLOON LOAD ERROR"; });
+  balReady = true; tryReveal();
+}).catch(() => { statusLine.textContent = "BALLOON LOAD ERROR"; document.getElementById("boot")?.classList.add("ready"); });
 
 // IDLE — smooth 3D Lissajous drift: summed incommensurate low-freq sines → analytically smooth
 // velocity (never jerky), real depth (Z) travel, periods ~5–27s (heavy floaty balloon). A slow sin³
@@ -323,7 +332,8 @@ function loadPhone() {
       screenImg.renderOrder = 5; scene.add(screenImg); screenImgBase = screenImg.position.clone();
     }
     setPhoneVisible(state === "act1");        // if the intro already started (balloon loaded first), show now
-  }, undefined, () => { /* phone load failed — the emerge still runs without the prop */ });
+    phoneReady = true; tryReveal();
+  }, undefined, () => { phoneReady = true; tryReveal(); /* phone load failed — reveal anyway; the emerge runs without the prop */ });
 }
 loadPhone();
 
