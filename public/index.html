@@ -8,15 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Expanded:wght@700;800;900&display=swap" rel="stylesheet">
-<!-- warm the break-glass assets while the reveal scrolls, so the hand-off is near-instant -->
-<link rel="prefetch" href="/experience.html">
-<link rel="prefetch" href="/screen.js">
-<link rel="prefetch" href="/balloon.js">
-<link rel="prefetch" href="/vendor/three.module.js">
-<link rel="prefetch" href="/vendor/addons/loaders/GLTFLoader.js">
-<link rel="prefetch" href="/vendor/addons/loaders/DRACOLoader.js">
-<link rel="prefetch" href="/models/iphone-opt.glb">
-<link rel="prefetch" href="/models/x.obj">
 <style>
   :root{
     --ink-base:#0A0A0C; --seat:#16161B; --panel:#1F1F1F;
@@ -362,15 +353,70 @@
     .shaft-decor,.cube,.ghost-num,.rail-guide{display:none !important}
   }
 
-  /* exit veil — fades to violet over everything just before navigating to the break-glass page,
-     so the seam is a violet cross-fade into that page's matching boot veil (no white flash). */
-  #exitveil{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0;transition:opacity .6s ease;
-    background:radial-gradient(120% 95% at 50% 62%, #1c1148 0%, #0c0826 48%, #05030f 100%)}
-  #exitveil.on{opacity:1}
+  /* ===== break-glass layer (inlined; revealed by the cross-fade once the reveal forms the phone) ===== */
+  :root{ --accent:#ff6a1f; --ink:#0a0807; }
+  #breakglass{position:fixed;inset:0;isolation:isolate;z-index:1}
+  #scroller{position:fixed;inset:0;isolation:isolate;z-index:2;transition:opacity 1.1s ease}
+  #scroller.gone{opacity:0;pointer-events:none}
+  #balloon{position:fixed;inset:0;width:100%;height:100%;z-index:1}
+  #glass{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+  #dream{position:fixed;inset:0;z-index:0;pointer-events:none}
+  #dream h1{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);opacity:0;will-change:left,top,opacity;font-weight:800;font-style:italic;font-size:clamp(30px,6.4vw,68px);letter-spacing:-.01em;color:#efe9ff;text-align:center;text-shadow:0 0 30px rgba(150,110,255,.6),0 4px 30px rgba(8,4,26,.6);white-space:nowrap}
+  #dream h1 b{color:var(--accent);font-style:normal}
+  .chrome{position:fixed;top:24px;left:28px;right:28px;z-index:10;display:flex;justify-content:space-between;align-items:center;transition:opacity .4s}
+  .brand{font-weight:900;letter-spacing:.04em;font-size:20px}.brand b{color:var(--accent)}
+  .tag{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:#8a8170}
+  #flash{position:fixed;inset:0;background:radial-gradient(circle at 50% 47%,#fff 0%,#ffe9cf 55%,#fff 100%);opacity:0;pointer-events:none;z-index:9}
+  #flash.go{animation:flashGo .42s ease-out forwards}
+  @keyframes flashGo{0%{opacity:0}22%{opacity:1}100%{opacity:0}}
+  .status{position:fixed;bottom:34px;left:0;right:0;text-align:center;z-index:10;font:600 12px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:#b9aef7}
+  .panel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:11;width:min(360px,78vw);text-align:center;padding:0 0 18px;background:linear-gradient(180deg,rgba(22,12,40,.12),rgba(10,5,24,.20));border:2.5px solid #ff453a;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 26px rgba(255,69,58,.22),inset 0 0 60px rgba(130,70,255,.08);transition:opacity .4s}
+  .panel .ribbon{display:block;background:repeating-linear-gradient(45deg,#ff453a 0 13px,#1a0510 13px 26px);padding:8px 0}
+  .panel .ribbon span{background:#ff453a;color:#12030a;padding:4px 12px;font:800 12px/1 "JetBrains Mono",monospace;letter-spacing:.2em;white-space:nowrap}
+  .panel h1{margin:20px 14px 0;font-weight:900;font-size:clamp(32px,7.4vw,50px);line-height:.9;letter-spacing:.01em;color:#fff;text-shadow:0 0 22px rgba(185,150,255,.55),0 2px 0 rgba(0,0,0,.3)}
+  .panel .sub{color:#d9b6ff;font:600 10px/1.5 "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;margin:11px 18px 0}
+  .qr{position:relative;width:186px;height:186px;margin:16px auto 12px;background:var(--cream);padding:12px}
+  .qr::before,.qr::after{content:"";position:absolute;width:18px;height:18px;border:3px solid #ff453a}
+  .qr::before{top:-8px;left:-8px;border-right:0;border-bottom:0}
+  .qr::after{bottom:-8px;right:-8px;border-left:0;border-top:0}
+  .qr img{width:100%;height:100%}
+  .code{font:700 13px/1 "JetBrains Mono",monospace;letter-spacing:.5em;color:#ff8a5a}
+  body.live .panel,body.live .chrome{opacity:0;pointer-events:none}
+  body.intro .panel{opacity:0;pointer-events:none}
+  #boot{position:fixed;inset:0;z-index:50;pointer-events:none;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 95% at 50% 62%,#1c1148 0%,#0c0826 48%,#05030f 100%);opacity:1;transition:opacity .9s ease}
+  #boot .bootmark{font-weight:900;letter-spacing:.06em;font-size:22px;color:var(--cream);animation:bootPulse 1.6s ease-in-out infinite}
+  #boot .bootmark b{color:var(--accent)}
+  #boot.ready{opacity:0}#boot.ready .bootmark{animation:none}
+  @keyframes bootPulse{0%,100%{opacity:.22}50%{opacity:.9}}
 </style>
 </head>
 <body>
-  <div id="exitveil"></div>
+
+<!-- break-glass layer (under the scroller; revealed by the cross-fade at the end) -->
+<div id="breakglass">
+  <div id="boot"><div class="bootmark">XLAB <b>REALITY</b></div></div>
+  <header class="chrome"><div class="brand">XLAB <b>REALITY</b></div><div class="tag">CAGED</div></header>
+  <div id="dream">
+    <h1>so let's make <b>magic</b></h1>
+    <h1>crafted to be felt</h1>
+    <h1>we build worlds</h1>
+    <h1>where ideas take flight</h1>
+  </div>
+  <canvas id="balloon"></canvas>
+  <canvas id="glass"></canvas>
+  <div id="flash"></div>
+  <div class="status" id="statusLine">WAITING FOR PHONE…</div>
+  <div class="panel" id="panel">
+    <div class="ribbon"><span>⚠ IN CASE OF EMERGENCY ⚠</span></div>
+    <h1>BREAK<br>THE GLASS</h1>
+    <div class="sub">scan · throw to smash · set the X free</div>
+    <div class="qr" id="qr"></div>
+    <div class="code" id="code">— — — —</div>
+  </div>
+</div>
+
+<!-- scroller layer (the reveal) -->
+<div id="scroller">
 
   <div class="hud" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
@@ -447,19 +493,14 @@
     </div>
   </header>
 
-  <div class="outro" id="outro" aria-hidden="true">
-    <div class="outro__in">
-      <span class="eyebrow">&#10022; The real one lives here</span>
-      <button class="enter" id="enterBtn" type="button">Enter the experience &rarr;</button>
-      <p>reality.xlab.agency &middot; a live XLAB experience</p>
-    </div>
-  </div>
+  <div class="outro" id="outro" aria-hidden="true"></div>
+</div><!-- /#scroller -->
 
 <script>
 (() => {
   const FRAMES = 1951;   // 1-1770 reveal + 1771-1951 cube->phone (XLAB app) ending
   const SM = innerWidth <= 900;                         // phones/small tablets get the lighter 854x480 frame set
-  const DIR = 'https://xlab-reveal-frames.pages.dev';   // reveal frames on Cloudflare's CDN (keeps the app host light)
+  const DIR = 'https://xlab-reveal-frames.pages.dev/' + (SM ? 'frames-sm' : 'frames');   // hi-res 1280x720 on desktop, light 854x480 on mobile — from the CDN
   const PAT = i => `${DIR}/xlab-reveal-${String(i).padStart(4,'0')}.webp`;
   const cv = document.getElementById('seq'), ctx = cv.getContext('2d');
   const loader = document.getElementById('loader'), lbar = document.getElementById('lbar'), ltxt = document.getElementById('ltxt');
@@ -468,14 +509,14 @@
   const cue = document.getElementById('cue'), nav = document.getElementById('nav');
   const fb = document.getElementById('fallback');
   const outroCard = document.getElementById('outro');
-  cv.width = 854; cv.height = 480;   // match the single 854x480 CDN frame set
-  // ---- HAND-OFF into the live break-glass page (reaching the outro / tapping Enter) ----
+  if(SM){ cv.width = 854; cv.height = 480; }   // desktop keeps the canvas at 1280x720 (hi-res); mobile uses the light set
+  // ---- HAND-OFF: cross-fade THIS reveal into the live break-glass underneath (same page, no navigation) ----
   let wentLive = false;
   function goLive(){ if(wentLive) return; wentLive = true;
-    const v = document.getElementById('exitveil'); if(v) v.classList.add('on');
-    setTimeout(() => { location.href = '/experience.html'; }, 620); }   // fade violet, then into the live experience
-  const enterBtn = document.getElementById('enterBtn');
-  if(enterBtn) enterBtn.addEventListener('click', goLive);
+    if(window.startBreakGlass) window.startBreakGlass();                       // wake the live 3D phone underneath
+    const layer = document.getElementById('scroller');
+    requestAnimationFrame(() => { if(layer) layer.classList.add('gone'); });   // fade the reveal away → the phone is already there
+  }
   const imgs = new Array(FRAMES+1);            // SPARSE — only a window around the cursor is ever held decoded
   const live = new Set();                      // frame indices currently alive
   let degraded = false, failedEarly = 0, curFrame = 1;
@@ -570,13 +611,13 @@
   // during the intro frames, which are already cached.
   ensureWindow(1, +1);                          // decode the opening so first paint is instant
   let revealed = false, cachedN = 0;
+  const REVEAL_AT = Math.ceil(FRAMES * 0.5);    // preload half before revealing → smooth scrub (the rest streams behind the scene)
   function reveal(){ if(revealed) return; revealed = true; loader.classList.add('hide'); curFrame = 1; update(0); }
-  // reveal the INSTANT the opening frame decodes (setTimeout-polled so it fires even if the tab starts hidden) — no long dark loader
-  (function revealWhenReady(){ if(revealed) return; if(ready(imgs[1])) reveal(); else setTimeout(revealWhenReady, 50); })();
   function onProgress(){
     const pc = Math.round(cachedN / FRAMES * 100);
     lbar.style.width = pc + '%'; ltxt.textContent = 'Loading ' + pc + '%';
-    if(failedEarly >= 60 && !revealed){ reveal(); enterFallback(); }
+    if(cachedN >= REVEAL_AT) reveal();
+    else if(failedEarly >= 60 && !revealed){ reveal(); enterFallback(); }
   }
   (function preloadAll(){
     let i = 1, active = 0;
@@ -657,7 +698,7 @@
     cue.style.opacity = fr>90 ? '0' : '1';
     nav.classList.toggle('hide', fr>60 && outro<0.5);
     if(outroCard) outroCard.classList.toggle('on', outro > 0.55);            // CTA tappable once it's mostly in
-    if(outro >= 0.999) goLive();                                            // scrolled all the way → flow into the live experience
+    if(mp >= 0.995) goLive();                                               // phone fully formed → cross-fade into the live experience (no buttons, no jump)
   }
 
   // ---- VIRTUAL SCROLL ----
@@ -721,5 +762,10 @@
   })();
 })();
 </script>
+
+<script type="importmap">
+  { "imports": { "three": "/vendor/three.module.js", "three/addons/": "/vendor/addons/" } }
+</script>
+<script type="module" src="/screen.js"></script>
 </body>
 </html>

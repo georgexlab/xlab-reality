@@ -13,3 +13,4 @@ public/audio/
 public/_archive-3dof-2026-06-15/
 # scroller intro frames (heavy — served from CDN in prod)
 public/intro/frames/
+public/intro/frames-sm/

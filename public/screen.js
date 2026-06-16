@@ -216,7 +216,7 @@ function tryReveal() {
 // the scroll-reveal intro (Act 0) calls this — via the host page — to flow into the live experience.
 // Standalone (no intro on the page) auto-hands-off so the break-glass still runs on its own.
 window.startBreakGlass = () => { handoff = true; tryReveal(); };
-if (window.__doHandoff || !window.frameElement && !document.getElementById("intro-frame")) window.startBreakGlass();
+if (window.__doHandoff || (!window.frameElement && !document.getElementById("intro-frame") && !document.getElementById("scroller"))) window.startBreakGlass();
 loadBalloon("/models/x.obj", WORLD_SIZE).then((b) => {
   bal = b; b.mesh.material.emissive = new THREE.Color(0x5a2fd6); b.mesh.material.emissiveIntensity = 0.28;
   b.mesh.material.transparent = true;                 // crossfade in as it emerges from the screen icon
@@ -568,6 +568,7 @@ function tick(now) {
   let dt = ((now || 0) - lastNow) / 1000; lastNow = now || 0;
   if (!(dt > 0)) dt = FRAME;               // first frame / missing timestamp
   dt = Math.min(dt, 0.05);                 // floor ~20fps: graceful slow-mo beats an exploding sim
+  if (!revealed) return;                   // not handed off yet — don't render the 3D (keeps the scroll-reveal smooth)
   if (paused) { renderRT(); renderer.render(scene, camera); drawGlass(); return; }
   const f = dt / FRAME;
   t += dt;
