@@ -72,12 +72,13 @@ pMat.onBeforeCompile = (sh) => {                  // each mote fades in only onc
 };
 const particles = new THREE.Points(pGeo, pMat);
 particles.frustumCulled = false; scene.add(particles);
-function updateParticles() {
+function updateParticles(dt) {
+  const f = dt / FRAME;
   pUniforms.uCamY.value = camera.position.y;
   const a = pGeo.attributes.position.array;
   for (let i = 0; i < PCOUNT; i++) {
-    a[i * 3 + 1] += pSpd[i] * 0.016;                                   // drift up slowly (everything floats — dreamy)
-    a[i * 3] += Math.sin(t * 0.25 + pPh[i]) * 0.0006;                  // gentle lateral sway
+    a[i * 3 + 1] += pSpd[i] * dt;                                      // drift up slowly (everything floats — dreamy)
+    a[i * 3] += Math.sin(t * 0.25 + pPh[i]) * 0.0006 * f;             // gentle lateral sway
     if (a[i * 3 + 1] > PVOL.y1) { a[i * 3 + 1] = PVOL.y0; a[i * 3] = (Math.random() * 2 - 1) * PVOL.x; a[i * 3 + 2] = (Math.random() * 2 - 1) * PVOL.z; }
   }
   pGeo.attributes.position.needsUpdate = true;
@@ -220,9 +221,10 @@ loadBalloon("/models/x.obj", WORLD_SIZE).then((b) => {
 // IDLE — smooth 3D Lissajous drift: summed incommensurate low-freq sines → analytically smooth
 // velocity (never jerky), real depth (Z) travel, periods ~5–27s (heavy floaty balloon). A slow sin³
 // envelope occasionally eases it UP to press the front glass (the trapped vibe), then peels off.
-function physics() {
-  phase += 0.016;
-  driftRamp = Math.min(1, driftRamp + 0.016 / 1.8); const dr = smooth(driftRamp);   // ease the drift IN from origin (no jump out of the climb's resting spot)
+function physics(dt) {
+  const f = dt / FRAME;
+  phase += dt;
+  driftRamp = Math.min(1, driftRamp + dt / 1.8); const dr = smooth(driftRamp);   // ease the drift IN from origin (no jump out of the climb's resting spot)
   const px = BX * (0.55 * Math.sin(0.37 * phase) + 0.30 * Math.sin(0.83 * phase + 1.7) + 0.15 * Math.sin(1.27 * phase + 4.1));
   const py = BY * (0.50 * Math.sin(0.29 * phase + 2.3) + 0.32 * Math.sin(0.61 * phase + 5.0) + 0.18 * Math.sin(1.07 * phase + 0.6));
   let pz = BZ * (0.45 * Math.sin(0.23 * phase + 1.1) + 0.30 * Math.sin(0.53 * phase + 3.4));
@@ -231,9 +233,9 @@ function physics() {
   rig.position.set(px * dr, py * dr, pz * dr);
   glassPress = Math.max(0, Math.min(1, (rig.position.z - BZ * 0.5) / (BZ * 0.49)));
   if (glassPress > 0.04) { const v = rig.position.clone().project(camera); pressX = (v.x * 0.5 + 0.5) * W; pressY = (-v.y * 0.5 + 0.5) * H; }
-  sq.lerp(new THREE.Vector3(0.1 * glassPress, 0.1 * glassPress, -0.2 * glassPress), 0.18); // flattens its face on the pane
+  sq.lerp(new THREE.Vector3(0.1 * glassPress, 0.1 * glassPress, -0.2 * glassPress), 1 - Math.pow(1 - 0.18, f)); // flattens its face on the pane (frame-rate-independent smoothing)
   rig.scale.set(1 + sq.x, 1 + sq.y, 1 + sq.z);
-  rig.rotation.x += 0.0028; rig.rotation.y += 0.0045; rig.rotation.z += 0.0015;
+  rig.rotation.x += 0.0028 * f; rig.rotation.y += 0.0045 * f; rig.rotation.z += 0.0015 * f;
 }
 
 /* ===================== ONE VERTICAL JOURNEY: phone (bottom) → rise past the titles → up into the
@@ -538,24 +540,35 @@ function destroyed() { flash.classList.remove("go"); void flash.offsetWidth; fla
 
 function renderRT() { if (rtBalloon) { renderer.setRenderTarget(RT); renderer.render(rtScene, rtCam); renderer.setRenderTarget(null); } }  // flat screen-icon → phone display
 let paused = false;   // dev: hold a frame for screenshots (rAF still renders, just stops advancing)
-function tick() {
+const FRAME = 1 / 60;        // the cadence the motion was tuned at; per-frame constants are scaled by f = dt / FRAME
+let lastNow = 0;             // wall-clock of the previous frame → real elapsed time
+function tick(now) {
   requestAnimationFrame(tick);
   if (!W || !H) resize();                 // self-heal if the page hadn't been sized when the module first ran
+  // REAL delta time (seconds), so the experience runs at the SAME speed on a 60Hz laptop, a 120Hz
+  // iPhone, or a stuttering device — not tied to frame count. Clamped so a 120Hz screen can't run it
+  // 2× fast and a tab-switch stall can't teleport everything. Computed before the pause-return so
+  // resuming never causes a jump. Below: per-second motion uses dt; per-frame-tuned constants use f.
+  if (!lastNow) lastNow = now || 0;
+  let dt = ((now || 0) - lastNow) / 1000; lastNow = now || 0;
+  if (!(dt > 0)) dt = FRAME;               // first frame / missing timestamp
+  dt = Math.min(dt, 0.05);                 // floor ~20fps: graceful slow-mo beats an exploding sim
   if (paused) { renderRT(); renderer.render(scene, camera); drawGlass(); return; }
-  t += 0.016;
-  updateParticles();
-  // falling glass shards keep dropping
-  for (const sh of shards) { if (sh.life > 0) { sh.cx += sh.vx; sh.cy += sh.vy; sh.vy += 0.5; sh.rot += sh.vr; sh.life -= 0.012; } }
+  const f = dt / FRAME;
+  t += dt;
+  updateParticles(dt);
+  // falling glass shards keep dropping (per-frame velocities → × f)
+  for (const sh of shards) { if (sh.life > 0) { sh.cx += sh.vx * f; sh.cy += sh.vy * f; sh.vy += 0.5 * f; sh.rot += sh.vr * f; sh.life -= 0.012 * f; } }
 
   if (bal) {
-    if (state === "act1") act1Tick(0.016);                                                            // ACT 1: tap → emerge → fly all the way up into the case
-    else if (state === "idle") { physics(); bal.deform(0.55 + (Math.sin(t * 1.3) * 0.5 + 0.5) * 0.05, t, true, 0); }  // caged (trapped, drifting)
+    if (state === "act1") act1Tick(dt);                                                            // ACT 1: tap → emerge → fly all the way up into the case
+    else if (state === "idle") { physics(dt); bal.deform(0.55 + (Math.sin(t * 1.3) * 0.5 + 0.5) * 0.05, t, true, 0); }  // caged (trapped, drifting)
     else if (state === "vanishing") {     // ACT 3 break-out: quick suck-away off the screen as the glass falls
-      vanishClock += 0.016;
+      vanishClock += dt;
       const a = Math.min(1, vanishClock / 0.35), e = a * a;
       rig.scale.setScalar(Math.max(0.001, 1 - e));
-      rig.position.y += 0.02;
-      rig.rotation.y += 0.06 + a * 0.2;
+      rig.position.y += 0.02 * f;
+      rig.rotation.y += (0.06 + a * 0.2) * f;
       bal.deform(0.55 + a * 0.25, t, true, 0.04);
       if (a >= 1) { rig.visible = false; state = "gone"; }
     }
@@ -598,10 +611,10 @@ $("balloon").addEventListener("pointerdown", (e) => {
 
 // dev hook — drive the rAF-throttled preview on demand
 window.__beam = { renderer, scene, camera, rig, caseGroup, glassPane, render: () => { renderRT(); renderer.render(scene, camera); drawGlass(); },
-  phys: (n) => { for (let i = 0; i < (n || 1); i++) { t += 0.016; physics(); if (bal) bal.deform(0.55, t, true, 0); } },
+  phys: (n) => { for (let i = 0; i < (n || 1); i++) { t += FRAME; physics(FRAME); if (bal) bal.deform(0.55, t, true, 0); } },
   tickN: (n) => { for (let i = 0; i < (n || 1); i++) tick(); }, throw: () => onThrow(),
   startIntro: () => startIntro(), enterCaged: () => enterCaged(), act: (s) => { state = s; },
-  drive: (st, n) => { paused = true; if (st) state = st; for (let i = 0; i < (n || 1); i++) { t += 0.016; if (state === "act1") act1Tick(0.016); } renderRT(); renderer.render(scene, camera); drawGlass(); },
+  drive: (st, n) => { paused = true; if (st) state = st; for (let i = 0; i < (n || 1); i++) { t += FRAME; if (state === "act1") act1Tick(FRAME); } renderRT(); renderer.render(scene, camera); drawGlass(); },
   release: () => { outState = true; sTarget = 1; floatT1 = 0; statusLine.textContent = ""; },   // dev: trigger the tap
   unfreeze: () => { paused = false; },
   get phone() { return phoneGroup; }, get flying() { return flying; }, get riseP1() { return riseP1; }, get titleFade() { return titleFade; },
