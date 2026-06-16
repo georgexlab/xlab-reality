@@ -712,7 +712,7 @@
     cue.style.opacity = fr>90 ? '0' : '1';
     nav.classList.toggle('hide', fr>60 && outro<0.5);
     if(outroCard) outroCard.classList.toggle('on', outro > 0.55);            // CTA tappable once it's mostly in
-    if(mp >= 0.995) goLive();                                               // phone fully formed → cross-fade into the live experience (no buttons, no jump)
+    if(fr >= 1850 || mp >= 0.995) goLive();                                 // as soon as the reveal forms the phone → cross-fade to the LIVE phone so it's tappable (don't require the absolute end)
   }
 
   // ---- VIRTUAL SCROLL ----
