@@ -1,0 +1,11 @@
+node_modules
+.git
+*.md
+cert.pem
+key.pem
+share.sh
+public/_archive-3dof-2026-06-15
+public/models/iphone.glb
+public/emerge.html
+public/modeltest.html
+public/inflatetest.html

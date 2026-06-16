@@ -1,0 +1,13 @@
+# Render blueprint — one-click setup for XLAB REALITY.
+# In Render: New → Blueprint → pick this repo → Apply. It builds the Dockerfile,
+# runs the Node server (WebSocket relay + QR + static), and gives an https URL.
+services:
+  - type: web
+    name: xlab-reality
+    runtime: docker
+    plan: starter            # no cold-start sleep (downgrade to "free" if you don't mind ~30s first-load)
+    region: frankfurt        # closest Render region to Dubai
+    healthCheckPath: /
+    envVars:
+      - key: CLOUD
+        value: "1"

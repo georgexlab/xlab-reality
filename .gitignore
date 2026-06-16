@@ -1,0 +1,13 @@
+node_modules/
+cert.pem
+key.pem
+*.log
+.DS_Store
+# the original 73MB phone model — deploy uses the 4.5MB draco one (iphone-opt.glb)
+public/models/iphone.glb
+# local-only fallback + dev harnesses (not part of the deployed experience)
+public/emerge.html
+public/modeltest.html
+public/inflatetest.html
+public/audio/
+public/_archive-3dof-2026-06-15/
