@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XLAB REALITY — break the glass.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+    <style>
+      :root { --cream:#efe7d3; --ink:#0a0807; --accent:#ff6a1f; }
+      * { margin:0; box-sizing:border-box; }
+      html,body { height:100%; background:radial-gradient(120% 95% at 50% 42%, #1c1148 0%, #0c0826 48%, #05030f 100%); color:var(--cream); font-family:"Archivo",system-ui,sans-serif; overflow:hidden; }
+
+      #balloon { position:fixed; inset:0; width:100%; height:100%; z-index:1; } /* balloon + the real 3D glass pane */
+      #glass { position:fixed; inset:0; width:100%; height:100%; z-index:2; pointer-events:none; } /* sheen + cracks + shards */
+
+      /* Act 1 titles — pinned to world heights, projected to screen per-frame (JS sets left/top/opacity).
+         Behind the canvas (z0) so the balloon passes in FRONT of them while scene.background is null. */
+      #dream { position:fixed; inset:0; z-index:0; pointer-events:none; }
+      #dream h1 { position:absolute; left:50%; top:50%; margin:0; transform:translate(-50%,-50%); opacity:0; will-change:left,top,opacity; font-weight:800; font-style:italic; font-size:clamp(30px,6.4vw,68px); letter-spacing:-.01em; color:#efe9ff; text-align:center; text-shadow:0 0 30px rgba(150,110,255,.6), 0 4px 30px rgba(8,4,26,.6); white-space:nowrap; }
+      #dream h1 b { color:var(--accent); font-style:normal; }
+
+      .chrome { position:fixed; top:24px; left:28px; right:28px; z-index:10; display:flex; justify-content:space-between; align-items:center; transition:opacity .4s; }
+      .brand { font-weight:900; letter-spacing:.04em; font-size:20px; } .brand b { color:var(--accent); }
+      .tag { font:500 11px/1 "JetBrains Mono",monospace; letter-spacing:.16em; color:#8a8170; }
+
+      /* the flash is the BRIDGE — peaks the instant the balloon "leaves" the screen, masking the cut to the phone */
+      #flash { position:fixed; inset:0; background:radial-gradient(circle at 50% 47%, #fff 0%, #ffe9cf 55%, #fff 100%); opacity:0; pointer-events:none; z-index:9; }
+      #flash.go { animation:flashGo .42s ease-out forwards; }
+      @keyframes flashGo { 0%{opacity:0} 22%{opacity:1} 100%{opacity:0} }
+
+      .status { position:fixed; bottom:34px; left:0; right:0; text-align:center; z-index:10; font:600 12px/1 "JetBrains Mono",monospace; letter-spacing:.16em; color:#b9aef7; }
+
+      /* "IN CASE OF EMERGENCY — BREAK GLASS" placard, printed/etched onto the front pane (flat, not a floating card) */
+      .panel { display:none;   /* the visible placard is now a 3D decal printed on the glass; this stays only as the QR-image source */
+        position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:11; width:min(360px,78vw); text-align:center;
+        padding:0 0 18px; background:linear-gradient(180deg, rgba(22,12,40,.12), rgba(10,5,24,.20));
+        border:2.5px solid #ff453a; box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 0 26px rgba(255,69,58,.22), inset 0 0 60px rgba(130,70,255,.08); transition:opacity .4s; }
+      .panel .ribbon { display:block; background:repeating-linear-gradient(45deg,#ff453a 0 13px,#1a0510 13px 26px); padding:8px 0; }
+      .panel .ribbon span { background:#ff453a; color:#12030a; padding:4px 12px; font:800 12px/1 "JetBrains Mono",monospace; letter-spacing:.2em; white-space:nowrap; }
+      .panel h1 { margin:20px 14px 0; font-weight:900; font-size:clamp(32px,7.4vw,50px); line-height:.9; letter-spacing:.01em; color:#fff; text-shadow:0 0 22px rgba(185,150,255,.55), 0 2px 0 rgba(0,0,0,.3); }
+      .panel .sub { color:#d9b6ff; font:600 10px/1.5 "JetBrains Mono",monospace; letter-spacing:.14em; text-transform:uppercase; margin:11px 18px 0; }
+      .qr { position:relative; width:186px; height:186px; margin:16px auto 12px; background:var(--cream); padding:12px; }
+      .qr::before, .qr::after { content:""; position:absolute; width:18px; height:18px; border:3px solid #ff453a; }
+      .qr::before { top:-8px; left:-8px; border-right:0; border-bottom:0; }
+      .qr::after { bottom:-8px; right:-8px; border-left:0; border-top:0; }
+      .qr img { width:100%; height:100%; }
+      .code { font:700 13px/1 "JetBrains Mono",monospace; letter-spacing:.5em; color:#ff8a5a; }
+      body.live .panel, body.live .chrome { opacity:0; pointer-events:none; }
+      body.intro .panel { opacity:0; pointer-events:none; }   /* hide the placard during the Act-1 intro */
+
+      /* boot veil — covers the load so nothing pops/cuts; lifts once phone+balloon are ready, fading in onto the
+         phone. This is also what bridges the seam when the scroller (index.html) hands off to this page. */
+      #boot { position:fixed; inset:0; z-index:50; pointer-events:none; display:flex; align-items:center; justify-content:center;
+        background:radial-gradient(120% 95% at 50% 62%, #1c1148 0%, #0c0826 48%, #05030f 100%); opacity:1; transition:opacity .9s ease; }
+      #boot .bootmark { font-weight:900; letter-spacing:.06em; font-size:22px; color:var(--cream); animation:bootPulse 1.6s ease-in-out infinite; }
+      #boot .bootmark b { color:var(--accent); }
+      #boot.ready { opacity:0; } #boot.ready .bootmark { animation:none; }
+      @keyframes bootPulse { 0%,100%{opacity:.22} 50%{opacity:.9} }
+    </style>
+  </head>
+  <body>
+    <div id="boot"><div class="bootmark">XLAB <b>REALITY</b></div></div>
+    <header class="chrome"><div class="brand">XLAB <b>REALITY</b></div><div class="tag">CAGED</div></header>
+
+    <div id="dream">
+      <h1>so let's make <b>magic</b></h1>
+      <h1>crafted to be felt</h1>
+      <h1>we build worlds</h1>
+      <h1>where ideas take flight</h1>
+    </div>
+
+    <canvas id="balloon"></canvas>
+    <canvas id="glass"></canvas>
+    <div id="flash"></div>
+
+    <div class="status" id="statusLine">WAITING FOR PHONE…</div>
+
+    <div class="panel" id="panel">
+      <div class="ribbon"><span>⚠ IN CASE OF EMERGENCY ⚠</span></div>
+      <h1>BREAK<br>THE GLASS</h1>
+      <div class="sub">scan · throw to smash · set the X free</div>
+      <div class="qr" id="qr"></div>
+      <div class="code" id="code">— — — —</div>
+    </div>
+
+    <script type="importmap">
+      { "imports": {
+        "three": "/vendor/three.module.js",
+        "three/addons/": "/vendor/addons/"
+      } }
+    </script>
+    <script type="module" src="/screen.js"></script>
+  </body>
+</html>
