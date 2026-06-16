@@ -436,7 +436,6 @@
 
   <nav id="nav">
     <a class="brand" href="#top">XLAB</a>
-    <a class="cta" href="mailto:george@xlab.agency">Start a project</a>
   </nav>
 
   <a id="top"></a>
@@ -538,6 +537,19 @@
 
   // beat setup: wrap each line/mark in a riser span for the clip-mask press-up
   const beatEls = [...document.querySelectorAll('.beats .beat')];
+  // ---- scroll DWELL: each text "locks" — frames where a beat is fully shown cost more scroll to move past,
+  // so you can't blow through the copy; the morph transitions keep their normal pace (V_MAX scales to absorb the dwell). ----
+  const DWELL = 3.0;   // a fully-shown text takes ~3× the scroll to pass (raise = stickier, lower = easier to skip)
+  const _bands = beatEls.map(b => [+b.dataset.fvisin, +b.dataset.fvisout]);
+  const _cost = new Float64Array(FRAMES + 1);
+  { let acc = 0; for (let f = 1; f <= FRAMES; f++){ let w = 1; for (const bn of _bands){ if (f >= bn[0] && f <= bn[1]){ w = DWELL; break; } } acc += w; _cost[f] = acc; } }
+  const totalCost = _cost[FRAMES];
+  function warpToFrame(x){            // linear scroll fraction x∈[0,1] → frame number (lingers on the text bands)
+    const tgt = (x < 0 ? 0 : x > 1 ? 1 : x) * totalCost;
+    let lo = 1, hi = FRAMES;
+    while (lo < hi){ const mid = (lo + hi) >> 1; if (_cost[mid] < tgt) lo = mid + 1; else hi = mid; }
+    return lo;
+  }
   beatEls.forEach(b => b.querySelectorAll('.ln, .mark').forEach(ln => {
     if(ln.dataset.wrapped) return; ln.dataset.wrapped='1'; ln.innerHTML='<span>'+ln.innerHTML+'</span>';
   }));
@@ -697,16 +709,17 @@
     if(degraded) return;   // static fallback is showing — nothing to drive
     const mp = Math.min(1, p / MORPH_END);                                   // morph progress
     const outro = p > MORPH_END ? (p - MORPH_END) / (1 - MORPH_END) : 0;     // 0..1 across the outro band
-    const fr = Math.min(FRAMES, Math.max(1, Math.round(mp*(FRAMES-1))+1));
+    const fr = warpToFrame(mp);   // dwell-warped: scroll lingers on each full text, zips the transitions
+    const ff = (fr - 1) / (FRAMES - 1);   // warped frame fraction — drives the rails + lighting so they dwell WITH the text
     const dir = fr>=curFrame ? 1 : -1; curFrame = fr;
     ensureWindow(fr, dir);          // keep a window loaded ahead in the scroll direction
     evictFar(fr);                   // drop far frames -> memory stays bounded, never the full 1770
     draw(fr);
     bar.style.width = (p*100)+'%';
-    heroStage.style.setProperty('--reveal', mp.toFixed(4));
+    heroStage.style.setProperty('--reveal', ff.toFixed(4));
     document.documentElement.style.setProperty('--outro', outro.toFixed(4));  // root var: drives the closing card + label fade
     driveBeats(fr);
-    driveFall(mp);
+    driveFall(ff);
     cv.style.opacity = '1';                                                  // morph ends ON the phone frame — keep it fully visible
     cue.style.opacity = fr>90 ? '0' : '1';
     nav.classList.toggle('hide', fr>60 && outro<0.5);
@@ -722,7 +735,7 @@
   // rock-still and the loop runs every frame, so it can't freeze mid-flick.
   let vScroll = 0, vVel = 0, curP = 0, lastApplied = -1, touching = false;
   let tx = 0, ty = 0, px = 0, py = 0;
-  const V_MAX    = SM ? 4600 : 5100;     // input travel: morph (0..MORPH_END) keeps its pacing + a closing outro band
+  const V_MAX    = Math.round((SM ? 4600 : 5100) * totalCost / FRAMES);   // scaled so transitions keep their pace AND the text-dwell adds on top
   const EASE     = SM ? 0.12  : 0.15;    // how fast the morph chases your input
   const FRICTION = 0.92;                 // flick-momentum decay
   const MAXSTEP  = SM ? 0.0032 : 0.0048; // cap on progress/frame -> a flick PLAYS through frames smoothly (lower = shows more frames)
