@@ -212,6 +212,7 @@ function tryReveal() {
   revealed = true;
   if (state === "loading") startIntro();
   document.getElementById("boot")?.classList.add("ready");
+  if (window.__onLive) window.__onLive();   // tell the host page to cross-fade the reveal away → the live phone
 }
 // the scroll-reveal intro (Act 0) calls this — via the host page — to flow into the live experience.
 // Standalone (no intro on the page) auto-hands-off so the break-glass still runs on its own.
