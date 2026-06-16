@@ -533,14 +533,16 @@
   // during the intro frames, which are already cached.
   ensureWindow(1, +1);                          // decode the opening so first paint is instant
   let revealed = false, cachedN = 0;
-  const REVEAL_AT = Math.ceil(FRAMES * 0.5);    // reveal once half is cached; rest streams in behind the intro
   function reveal(){ if(revealed) return; revealed = true; loader.classList.add('hide'); curFrame = 1; update(0);
     if(window.parent && window.parent !== window){ try{ parent.postMessage('intro-ready','*'); }catch(e){} } }   // tell the host to start loading the break-glass in the background
+  // Reveal the INSTANT the opening frame is decoded — the XLAB logo shows in ~1s and the rest of the 1770
+  // frames stream in behind the live scene. No more multi-second dark "Loading %" screen (read as "broken").
+  // setTimeout (not rAF) so the reveal still fires even if the tab starts in the background.
+  (function revealWhenReady(){ if(revealed) return; if(ready(imgs[1])) reveal(); else setTimeout(revealWhenReady, 50); })();
   function onProgress(){
     const pc = Math.round(cachedN / FRAMES * 100);
     lbar.style.width = pc + '%'; ltxt.textContent = 'Loading ' + pc + '%';
-    if(cachedN >= REVEAL_AT) reveal();
-    else if(failedEarly >= 60 && !revealed){ reveal(); enterFallback(); }
+    if(failedEarly >= 60 && !revealed){ reveal(); enterFallback(); }
   }
   (function preloadAll(){
     let i = 1, active = 0;
@@ -554,7 +556,7 @@
     }
     pump();
   })();
-  setTimeout(() => { if(!revealed){ firstReady() ? reveal() : enterFallback(); } }, 14000);  // safety net
+  setTimeout(() => { if(!revealed){ firstReady() ? reveal() : enterFallback(); } }, 8000);  // safety net
 
   // frame-based beat driver — stable when frames are appended to the sequence
   function driveBeats(fr){
