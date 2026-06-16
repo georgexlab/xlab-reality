@@ -92,6 +92,7 @@ addEventListener("resize", resize); resize();
 /* ---------------- the glass display case ---------------- */
 const HX = 1.4, HY = 1.05, HZ = 1.3;          // box half-extents (deeper Z → more visible depth travel; front glass at z=+HZ)
 const caseGroup = new THREE.Group(); scene.add(caseGroup);
+caseGroup.visible = false;   // stay hidden until startIntro/enterCaged — else the camera's default origin framing flashes the QR placard during the balloon load
 const frameMat = new THREE.MeshStandardMaterial({ color: 0x1a140d, metalness: 0.7, roughness: 0.34, envMapIntensity: 1.0 });
 const FW = 0.05;
 function bar(x, y, z, w, h, d) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMat); m.position.set(x, y, z); caseGroup.add(m); }
