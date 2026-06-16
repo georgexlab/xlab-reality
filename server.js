@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 const http = require("http");
+const zlib = require("zlib");
 const { WebSocketServer } = require("ws");
 const QRCode = require("qrcode");
 
@@ -37,6 +38,10 @@ const MIME = {
   ".json": "application/json",
 };
 
+// Text-ish assets worth gzipping (binary like .glb/.png/.wav is already compressed,
+// and .wasm is left raw so WebAssembly streaming compilation stays happy).
+const COMPRESSIBLE = new Set([".html", ".js", ".css", ".svg", ".json", ".obj"]);
+
 async function handler(req, res) {
   {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -63,16 +68,48 @@ async function handler(req, res) {
       }
     }
 
-    // static
+    // cheap health probe (doesn't touch the filesystem)
+    if (url.pathname === "/healthz") {
+      res.writeHead(200, { "Content-Type": "text/plain", "Cache-Control": "no-store" });
+      return res.end("ok");
+    }
+
+    // static — streamed (low memory, never blocks the event loop), gzipped for text,
+    // and 304-revalidated so a refresh doesn't re-pull ~13MB of assets.
     let p = url.pathname === "/" ? "/index.html" : url.pathname;
     const file = path.join(PUBLIC, path.normalize(p).replace(/^(\.\.[/\\])+/, ""));
-    fs.readFile(file, (err, buf) => {
-      if (err) {
-        res.writeHead(404);
+    fs.stat(file, (err, st) => {
+      if (err || !st.isFile()) {
+        res.writeHead(404, { "Content-Type": "text/plain" });
         return res.end("not found");
       }
-      res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
-      res.end(buf);
+      const ext = path.extname(file);
+      const lastMod = st.mtime.toUTCString();
+      const etag = `"${st.size.toString(16)}-${Math.round(st.mtimeMs).toString(16)}"`;
+      // browser already has this exact version → tiny 304, no re-download
+      if (req.headers["if-none-match"] === etag || req.headers["if-modified-since"] === lastMod) {
+        res.writeHead(304);
+        return res.end();
+      }
+      const headers = {
+        "Content-Type": MIME[ext] || "application/octet-stream",
+        "Last-Modified": lastMod,
+        "ETag": etag,
+        "Cache-Control": "public, max-age=300, must-revalidate",
+      };
+      const stream = fs.createReadStream(file);
+      stream.on("error", () => { if (!res.headersSent) res.writeHead(500); res.end(); });
+      const wantsGzip = /\bgzip\b/.test(req.headers["accept-encoding"] || "");
+      if (wantsGzip && COMPRESSIBLE.has(ext)) {
+        headers["Content-Encoding"] = "gzip";
+        headers["Vary"] = "Accept-Encoding";
+        res.writeHead(200, headers);
+        stream.pipe(zlib.createGzip()).pipe(res);
+      } else {
+        headers["Content-Length"] = st.size;
+        res.writeHead(200, headers);
+        stream.pipe(res);
+      }
     });
   }
 }
