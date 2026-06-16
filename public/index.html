@@ -85,8 +85,8 @@
     animation:heroKeyDrift 16s ease-in-out infinite alternate}
   @keyframes heroKeyDrift{0%{transform:translate3d(-1%,0,0) scale(1)}100%{transform:translate3d(1.5%,-1.2%,0) scale(1.05)}}
 
-  canvas#seq{position:relative;z-index:2;width:min(124vw,1435px);height:auto;display:block;left:0;
-    filter:drop-shadow(0 40px 80px #000a);will-change:transform}
+  canvas#seq{position:absolute;top:-3%;left:-3%;z-index:2;width:106%;height:106%;object-fit:cover;display:block;
+    filter:drop-shadow(0 26px 60px #0007);will-change:transform}  /* fullscreen — morph bleeds to the screen edges, no box clip */
 
   .scrollcue{position:absolute;z-index:3;bottom:4vh;left:0;right:0;text-align:center;
     font-family:var(--mono);font-size:10px;letter-spacing:.34em;color:#6a6a74;text-transform:uppercase;transition:opacity .4s}
@@ -224,9 +224,9 @@
 
   /* ===== CLOSING OUTRO — the reveal ends on a CTA into the live experience ===== */
   .rail,.beats{opacity:calc(1 - var(--outro,0))}   /* morph labels clear as the outro rises */
-  .outro{position:fixed;inset:0;z-index:9;display:grid;place-items:center;text-align:center;padding:28px;
+  .outro{position:fixed;inset:0;z-index:9;display:grid;place-items:end center;text-align:center;padding:0 24px 7vh;
     pointer-events:none;opacity:var(--outro,0);
-    background:radial-gradient(64% 64% at 50% 50%, rgba(7,7,12,calc(var(--outro,0)*0.9)) 0%, rgba(7,7,12,calc(var(--outro,0)*0.55)) 58%, rgba(7,7,12,0) 100%)}
+    background:linear-gradient(to top, rgba(7,7,14,calc(var(--outro,0)*0.86)) 0%, rgba(7,7,14,calc(var(--outro,0)*0.42)) 22%, rgba(7,7,14,0) 48%)}
   .outro.on{pointer-events:auto}
   .outro__in{transform:translateY(calc((1 - var(--outro,0)) * 46px));will-change:transform}
   .outro .eyebrow{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.36em;text-transform:uppercase;color:var(--purple-bright);margin-bottom:20px}
@@ -240,6 +240,32 @@
   .outro .enter:hover{transform:translate(-2px,-2px);background:var(--gold-deep);box-shadow:8px 8px 0 rgba(87,57,251,.42)}
   .outro p{margin-top:18px;font-family:var(--mono);font-size:clamp(10px,1.05vw,12px);letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim)}
 
+  /* the end scene — XLAB app on a floating phone */
+  .outro .phone-link{display:block;pointer-events:inherit;text-decoration:none;margin:4px auto 0}
+  .phone{position:relative;width:clamp(140px,38vw,210px);aspect-ratio:9/19.5;margin:0 auto;padding:3.4%;
+    border-radius:15%/6.8%;background:linear-gradient(155deg,#24242e,#0c0c12);
+    box-shadow:0 0 0 1px #35353f, 0 30px 70px rgba(0,0,0,.6), 0 0 70px rgba(87,57,251,.32);
+    animation:phoneFloat 6s ease-in-out infinite;will-change:transform}
+  .phone__screen{position:relative;width:100%;height:100%;border-radius:12%/5.6%;overflow:hidden;
+    background:radial-gradient(125% 76% at 50% 0%, #1a1336 0%, #0a0a10 62%)}
+  .phone__island{position:absolute;top:3.2%;left:50%;transform:translateX(-50%);width:32%;height:13px;background:#000;border-radius:20px}
+  .phone__status{position:absolute;top:5%;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 10%;
+    font-family:var(--ff);font-weight:600;font-size:clamp(8px,2.1vw,11px);color:#fff}
+  .phone__status .batt{width:19px;height:10px;border:1.4px solid rgba(255,255,255,.85);border-radius:3px;position:relative}
+  .phone__status .batt::before{content:"";position:absolute;inset:1.4px;right:5px;background:#fff;border-radius:1px}
+  .phone__status .batt::after{content:"";position:absolute;right:-3px;top:2.6px;width:2px;height:4px;background:rgba(255,255,255,.85);border-radius:0 2px 2px 0}
+  .phone__app{position:absolute;top:13%;left:11%;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .appicon{width:clamp(40px,11vw,52px);aspect-ratio:1;border-radius:24%;display:grid;place-items:center;
+    background:linear-gradient(150deg,#8b7bff 0%,#5739fb 52%,#3a20d6 100%);
+    box-shadow:0 0 22px rgba(123,99,255,.75), inset 0 1.5px 2px rgba(255,255,255,.45), inset 0 -3px 6px rgba(40,20,120,.5);
+    animation:appGlow 2.8s ease-in-out infinite}
+  .appicon svg{width:56%;height:56%}
+  .appicon svg line{stroke:#fff;stroke-width:18;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(255,255,255,.7))}
+  .phone__app b{font-family:var(--ff);font-weight:700;font-size:clamp(9px,2.3vw,12px);color:#fff;letter-spacing:.03em}
+  @keyframes phoneFloat{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-12px) rotate(.5deg)}}
+  @keyframes appGlow{0%,100%{box-shadow:0 0 18px rgba(123,99,255,.55), inset 0 1.5px 2px rgba(255,255,255,.45), inset 0 -3px 6px rgba(40,20,120,.5)}
+    50%{box-shadow:0 0 34px rgba(123,99,255,.95), inset 0 1.5px 2px rgba(255,255,255,.45), inset 0 -3px 6px rgba(40,20,120,.5)}}
+
   @media(prefers-reduced-motion:reduce){
     .hero-stage{--reveal:0.55}.hero-stage::after{animation:none}
     .beat .ln > span,.beat--final .mark > span{transform:none!important}
@@ -249,7 +275,7 @@
     .cube,.ghost-num{display:none}
   }
   @media(max-width:820px){
-    canvas#seq{left:0;width:min(92vw,560px)}
+    /* canvas stays fullscreen (cover) at all sizes */
     .beat{margin-bottom:16vh}
     .beat .ln{font-size:clamp(2.1rem,11vw,3.6rem)}
     .beat--job .ln{font-size:clamp(1.3rem,6.4vw,2.4rem)}
@@ -271,7 +297,7 @@
      ============================================================ */
   @media(max-width:600px){
     /* morph object: centered, slightly smaller so the lower third gets clean air */
-    canvas#seq{left:0;width:min(88vw,520px)}
+    canvas#seq{object-fit:contain}  /* phone: full object fills the width & bleeds to the side edges; cover would crop wide marks (the logo) */
 
     /* titles enter FAST on phone so they fully show even on a quick flick */
     .beat[data-state="in"] .ln > span,
@@ -407,7 +433,7 @@
             <span class="tech"><i>Real-time face tracking</i><i>Live frame fit</i><i>Tap to switch</i><i>Social share</i></span>
           </div>
 
-          <div class="beat beat--job beat--final" data-fin0="1690" data-fvisin="1745" data-fvisout="1810" data-fout1="1810">
+          <div class="beat beat--job" data-fin0="1685" data-fvisin="1712" data-fvisout="1763" data-fout1="1805">
             <span class="idx"><b>AR</b> &middot; ENGINE VISUALIZATION</span>
             <span class="ln">BOEING</span>
             <span class="sub">Tear a jet turbine apart in 3D, part by part.</span>
@@ -423,8 +449,7 @@
 
   <div class="outro" id="outro" aria-hidden="true">
     <div class="outro__in">
-      <span class="eyebrow">&#10022; This was a taste</span>
-      <h2>Step into<br>the <span class="g">real</span> thing.</h2>
+      <span class="eyebrow">&#10022; The real one lives here</span>
       <button class="enter" id="enterBtn" type="button">Enter the experience &rarr;</button>
       <p>reality.xlab.agency &middot; a live XLAB experience</p>
     </div>
@@ -432,9 +457,9 @@
 
 <script>
 (() => {
-  const FRAMES = 1770;
+  const FRAMES = 1951;   // 1-1770 reveal + 1771-1951 cube->phone (XLAB app) ending
   const SM = innerWidth <= 900;                         // phones/small tablets get the lighter 854x480 frame set
-  const DIR = 'https://xlab-reveal-frames.pages.dev';   // 854x480 reveal frames on Cloudflare's CDN (keeps the app host light)
+  const DIR = 'https://xlab-reveal-frames.pages.dev';   // reveal frames on Cloudflare's CDN (keeps the app host light)
   const PAT = i => `${DIR}/xlab-reveal-${String(i).padStart(4,'0')}.webp`;
   const cv = document.getElementById('seq'), ctx = cv.getContext('2d');
   const loader = document.getElementById('loader'), lbar = document.getElementById('lbar'), ltxt = document.getElementById('ltxt');
@@ -443,17 +468,12 @@
   const cue = document.getElementById('cue'), nav = document.getElementById('nav');
   const fb = document.getElementById('fallback');
   const outroCard = document.getElementById('outro');
-  cv.width = 854; cv.height = 480;   // match the single 854x480 frame set
-  // ---- HAND-OFF into the live break-glass experience ----
-  // Reaching the end (or tapping Enter) fades a violet veil over the reveal, then navigates into the live
-  // break-glass page. The break-glass assets are prefetched (see <head>), so it loads near-instantly, and its
-  // matching violet boot veil receives the cross-fade → one continuous violet seam, no white flash.
+  cv.width = 854; cv.height = 480;   // match the single 854x480 CDN frame set
+  // ---- HAND-OFF into the live break-glass page (reaching the outro / tapping Enter) ----
   let wentLive = false;
-  function goLive(){
-    if(wentLive) return; wentLive = true;
+  function goLive(){ if(wentLive) return; wentLive = true;
     const v = document.getElementById('exitveil'); if(v) v.classList.add('on');
-    setTimeout(() => { location.href = '/experience.html'; }, 620);
-  }
+    setTimeout(() => { location.href = '/experience.html'; }, 620); }   // fade violet, then into the live experience
   const enterBtn = document.getElementById('enterBtn');
   if(enterBtn) enterBtn.addEventListener('click', goLive);
   const imgs = new Array(FRAMES+1);            // SPARSE — only a window around the cursor is ever held decoded
@@ -550,11 +570,8 @@
   // during the intro frames, which are already cached.
   ensureWindow(1, +1);                          // decode the opening so first paint is instant
   let revealed = false, cachedN = 0;
-  function reveal(){ if(revealed) return; revealed = true; loader.classList.add('hide'); curFrame = 1; update(0);
-    if(window.parent && window.parent !== window){ try{ parent.postMessage('intro-ready','*'); }catch(e){} } }   // tell the host to start loading the break-glass in the background
-  // Reveal the INSTANT the opening frame is decoded — the XLAB logo shows in ~1s and the rest of the 1770
-  // frames stream in behind the live scene. No more multi-second dark "Loading %" screen (read as "broken").
-  // setTimeout (not rAF) so the reveal still fires even if the tab starts in the background.
+  function reveal(){ if(revealed) return; revealed = true; loader.classList.add('hide'); curFrame = 1; update(0); }
+  // reveal the INSTANT the opening frame decodes (setTimeout-polled so it fires even if the tab starts hidden) — no long dark loader
   (function revealWhenReady(){ if(revealed) return; if(ready(imgs[1])) reveal(); else setTimeout(revealWhenReady, 50); })();
   function onProgress(){
     const pc = Math.round(cachedN / FRAMES * 100);
@@ -636,11 +653,11 @@
     document.documentElement.style.setProperty('--outro', outro.toFixed(4));  // root var: drives the closing card + label fade
     driveBeats(fr);
     driveFall(mp);
-    cv.style.opacity = (1 - outro*0.62).toFixed(3);                          // object recedes as the closing card rises
+    cv.style.opacity = '1';                                                  // morph ends ON the phone frame — keep it fully visible
     cue.style.opacity = fr>90 ? '0' : '1';
     nav.classList.toggle('hide', fr>60 && outro<0.5);
     if(outroCard) outroCard.classList.toggle('on', outro > 0.55);            // CTA tappable once it's mostly in
-    if(outro >= 0.999) goLive();                                             // scrolled all the way → flow into the live experience
+    if(outro >= 0.999) goLive();                                            // scrolled all the way → flow into the live experience
   }
 
   // ---- VIRTUAL SCROLL ----
