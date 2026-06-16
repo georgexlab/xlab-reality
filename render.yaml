@@ -8,6 +8,8 @@ services:
     plan: starter            # no cold-start sleep (downgrade to "free" if you don't mind ~30s first-load)
     region: frankfurt        # closest Render region to Dubai
     healthCheckPath: /
+    domains:
+      - reality.xlab.agency
     envVars:
       - key: CLOUD
         value: "1"
