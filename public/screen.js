@@ -621,7 +621,9 @@ iconHit.position.copy(E_IN); scene.add(iconHit);
 const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2();
 $("balloon").addEventListener("pointerdown", (e) => {
   if (state !== "act1" || outState) return;                         // releases once, only before it emerges
-  outState = true; sTarget = 1; floatT1 = 0; statusLine.textContent = "";   // TAP ANYWHERE on the phone releases it (the X icon is just the visual cue) — robust, no missed-target
+  _ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  _ray.setFromCamera(_ndc, camera);
+  if (_ray.intersectObject(iconHit).length) { outState = true; sTarget = 1; floatT1 = 0; statusLine.textContent = ""; }   // tapped the X → release
 });
 
 // dev hook — drive the rAF-throttled preview on demand
